@@ -153,11 +153,10 @@ That's it. Now rsync should be setup to run with sudo if needed.
 
 Run the following commands in terminal to install the required packages
 
-	sudo apt-get build-dep qt5-qmake
-	sudo apt-get build-dep libqt5gui5
-	sudo apt-get build-dep libqt5webengine-data
-	sudo apt-get build-dep libqt5webkit5
-	sudo apt-get install libudev-dev libinput-dev libts-dev libxcb-xinerama0-dev libxcb-xinerama0 gdbserver
+    sudo apt-get install devscripts
+	mk-build-deps --install --remove --root-cmd sudo qt5-qmake
+	mk-build-deps --install --remove --root-cmd sudo libqt5gui5
+	sudo apt-get install libzstd-dev mesa-common-dev libudev-dev libinput-dev libts-dev libxcb-xinerama0-dev libxcb-xinerama0 gdbserver
 	
 At this stage I made a backup of my SD card image using `Win32DiskImager` so that I can easily revert to this state if something later on broke the installation.
 	
@@ -173,6 +172,8 @@ It should be noted that I initially had issues configuring my build of Qt with t
 	sudo apt-get install libgstreamer1.0-dev  libgstreamer-plugins-base1.0-dev libopenal-data libsndio7.0 libopenal1 libopenal-dev pulseaudio
 	sudo apt-get install bluez-tools
 	sudo apt-get install libbluetooth-dev
+    sudo apt-get install flite1-dev libspeechd-dev 
+    cd /usr/lib/arm-linux-gnueabihf; for f in pulseaudio/*; do sudo ln -sv $f; done
 	
 In my installation, I skipped this step and did it at a later stage. The exact steps I happened to follow which worked for me are documented below.
 
@@ -231,15 +232,6 @@ Extract the downloaded tar file with the following command:
 
 	sudo tar xfv qt-everywhere-src-5.15.0.tar.xz 
 	
-We need to slightly modify the a mkspec file within the source files to allow us to use our cross compiler. We will copy an existing directory within the source files, and modify the name of the directory and the 
-contents of the qmake.conf file within that directory to follow the name of our compiler.  
-
-To do this, run the following two command:
-
-	cp -R qt-everywhere-src-5.15.0/qtbase/mkspecs/linux-arm-gnueabi-g++ qt-everywhere-src-5.15.0/qtbase/mkspecs/linux-arm-gnueabihf-g++
-	
-	sed -i -e 's/arm-linux-gnueabi-/arm-linux-gnueabihf-/g' qt-everywhere-src-5.15.0/qtbase/mkspecs/linux-arm-gnueabihf-g++/qmake.conf
-
 ### 4.2 Download the cross-compiler
 
 Most cross-compilation guides for the Raspberry Pi will use the tools provided by Raspberry Foundation themselves, but this will not work here as the gcc version present in those files is too old. We will download a newer linaro compiler. I used version 7.4.1 of the compiler.
@@ -320,7 +312,7 @@ Let's move into the build directory that we created earlier inside the rpi folde
 Now we need to run the configure script to configure our build. This configure script is actually located inside the qt sources directory. We don't want to build within that source directory as it can get messy, so we will access it from
 within this build directory. This is the command you need to run to configure the build, including all the necessary options:
 
-	../qt-everywhere-src-5.15.0/configure -release -opengl es2  -eglfs -device linux-rasp-pi4-v3d-g++ -device-option CROSS_COMPILE=~/rpi/tools/gcc-linaro-7.4.1-2019.02-x86_64_arm-linux-gnueabihf/bin/arm-linux-gnueabihf- -sysroot ~/rpi/sysroot -prefix /usr/local/qt5.15 -extprefix ~/rpi/qt5.15 -opensource -confirm-license -skip qtscript -skip qtwayland -skip qtwebengine -nomake tests -make libs -pkg-config -no-use-gold-linker -v -recheck
+	../qt-everywhere-src-5.15.0/configure -release -opengl es2  -eglfs -device linux-rasp-pi4-v3d-g++ -device-option CROSS_COMPILE=/opt/rpi/rpi-gcc-8.3.0/bin/arm-linux-gnueabihf- -sysroot ~/rpi/sysroot -prefix /usr/local/qt5.15 -extprefix ~/rpi/qt5.15 -opensource -confirm-license -skip qtscript -skip qtwayland -skip qtwebengine -nomake tests -make libs -pkg-config -no-use-gold-linker -v -recheck
 	
 The configure script may take a few minutes to complete. Once it is completed you should get a summary of what has been configured. Make sure the following options appear:
 
